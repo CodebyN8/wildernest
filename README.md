@@ -1,4 +1,4 @@
-# WaterBNB
+# Wildernest
 
 ## Database Schema Design
 
