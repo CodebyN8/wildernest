@@ -1,5 +1,5 @@
 const express = require("express");
-const { User, Spot, Booking } = require("../../db/models");
+const { User, Spot, Booking, Review } = require("../../db/models");
 
 const router = express.Router();
 
@@ -77,6 +77,42 @@ router.get("/:spotId/bookings", async (req, res) => {
       message: "Internal server error",
     });
   }
+});
+
+//reviews for a spot
+router.get("/:spotId/reviews", async (req, res) => {
+  const { spotId } = req.params;
+  const spot = await Spot.findOne({
+    where: {
+      id: spotId,
+    },
+  });
+
+  if (spot === null) {
+    res.status(404).json({
+      message: "Spot couldn't be found",
+    });
+  }
+
+  const reviews = await Review.findAll({
+    where: {
+      spotId: spot.id,
+    },
+
+    include: [
+      {
+        model: User,
+        attributes: ["id", "firstName", "lastName"],
+      },
+      // {
+      //   model: ReviewImage,
+      //   attributes: ["id", "url"],
+      //   required: false,
+      // },
+    ],
+  });
+
+  res.json({ Reviews: reviews });
 });
 
 module.exports = router;
