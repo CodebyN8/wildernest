@@ -4,7 +4,7 @@ const { Op } = require("sequelize");
 const bcrypt = require("bcryptjs");
 
 const { setTokenCookie, restoreUser } = require("../../utils/auth");
-const { User } = require("../../db/models");
+const { User, Spot, Review, Booking } = require("../../db/models");
 
 const router = express.Router();
 
@@ -70,8 +70,8 @@ router.get("/", (req, res) => {
   if (user) {
     const safeUser = {
       id: user.id,
-      firstName: firstName,
-      lastName: lastName,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
       username: user.username,
     };
@@ -79,6 +79,67 @@ router.get("/", (req, res) => {
       user: safeUser,
     });
   } else return res.json({ user: null });
+});
+
+//Reviews by user
+router.get("/reviews", async (req, res) => {
+  const user = req.user;
+
+  const reviews = await Review.findAll({
+    where: {
+      userId: user.id,
+    },
+    include: [
+      {
+        model: User,
+        attributes: ["id", "firstName", "lastName"],
+      },
+      {
+        model: Spot,
+        attributes: {
+          exclude: ["description", "createdAt", "updatedAt"],
+        },
+        // include: [
+        //     {
+        //         model: SpotImage,
+        //         attributes: ["url"],
+        //         where: {
+        //             previewImage: true,
+        //         },
+        //     },
+        // ],
+      },
+      // {
+      //   model: ReviewImage,
+      //   attributes: { exclude: ["reviewId", "createdAt", "updatedAt"] },
+      // },
+    ],
+  });
+
+  let reviewsArr = [];
+
+  for (let i = 0; i < reviews.length; i++) {
+    let review = reviews[i];
+    let revObj = review.toJSON();
+    let spot = revObj.Spot;
+
+    // let spotImage = await SpotImage.findOne({
+    //   where: {
+    //     spotId: spot.id,
+    //     preview: true,
+    //   },
+    // });
+
+    // if (spotImage) {
+    //   spot.previewImage = spotImage.url;
+    // } else {
+    //   spot.previewImage = null;
+    // }
+
+    reviewsArr.push(revObj);
+  }
+
+  res.json({ Reviews: reviewsArr });
 });
 
 module.exports = router;
