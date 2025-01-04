@@ -150,9 +150,10 @@ router.get("/reviews", async (req, res) => {
   res.json({ Reviews: reviewsArr });
 });
 
+//Get all spots by current user
 router.get("/spots", requireAuth, async (req, res) => {
   const user = req.user;
-  console.log(user.id);
+
   const allSpots = await Spot.findAll({
     where: [{ ownerId: user.id }],
     attributes: [
@@ -177,7 +178,7 @@ router.get("/spots", requireAuth, async (req, res) => {
         ),
         "avgRating",
       ],
-      // [Sequelize.fn("AVG", Sequelize.col("Reviews.stars")), "avgRating"],
+
       [Sequelize.col("SpotImages.url"), "previewImage"],
     ],
 
