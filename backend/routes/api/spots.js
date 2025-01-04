@@ -7,7 +7,8 @@ const {
   SpotImage,
   Sequelize,
 } = require("../../db/models");
-const { route } = require("./session");
+const { requireAuth } = require("../../utils/auth");
+// const { route } = require("./session");
 
 const router = express.Router();
 
