@@ -2,6 +2,7 @@
 const express = require("express");
 const { Op } = require("sequelize");
 const bcrypt = require("bcryptjs");
+const { requireAuth } = require("../../utils/auth");
 
 const { setTokenCookie, restoreUser } = require("../../utils/auth");
 const {
@@ -149,7 +150,7 @@ router.get("/reviews", async (req, res) => {
   res.json({ Reviews: reviewsArr });
 });
 
-router.get("/spots", async (req, res) => {
+router.get("/spots", requireAuth, async (req, res) => {
   const user = req.user;
   console.log(user.id);
   const allSpots = await Spot.findAll({
