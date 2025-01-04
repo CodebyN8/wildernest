@@ -7,6 +7,7 @@ const {
   SpotImage,
   Sequelize,
 } = require("../../db/models");
+const { route } = require("./session");
 
 const router = express.Router();
 
@@ -160,6 +161,71 @@ router.get("/:spotId/reviews", async (req, res) => {
   });
 
   res.json({ Reviews: reviews });
+});
+
+// Spot details by id
+
+router.get("/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const spot = await Spot.findAll({
+    where: {
+      id: id,
+    },
+    attributes: [
+      "id",
+      "ownerId",
+      "address",
+      "city",
+      "state",
+      "country",
+      "lat",
+      "lng",
+      "name",
+      "description",
+      "price",
+      "createdAt",
+      "updatedAt",
+      [Sequelize.fn("COUNT", Sequelize.col("Reviews.id")), "numReviews"],
+      // [
+      //     Sequelize.fn("AVG", Sequelize.col("Reviews.stars")),
+      //     "avgStarRating",
+      // ],
+      [
+        Sequelize.fn(
+          "ROUND",
+          Sequelize.fn("AVG", Sequelize.col("Reviews.stars")),
+          2
+        ),
+        "avgRating",
+      ],
+    ],
+    include: [
+      {
+        model: SpotImage,
+        attributes: ["id", "url", "preview"],
+      },
+      {
+        model: Review,
+        attributes: [],
+      },
+      {
+        model: User,
+        as: "Owner",
+        attributes: ["id", "firstName", "lastName"],
+      },
+    ],
+    group: [["Spot.id"], ["SpotImages.url"], ["SpotImages.id"], ["Owner.id"]],
+    order: [["id", "ASC"]],
+  });
+
+  if (spot.length === 0) {
+    res.status(404).json({
+      message: "Spot couldn't be found",
+    });
+  } else {
+    res.json({ Spots: spot });
+  }
 });
 
 module.exports = router;
