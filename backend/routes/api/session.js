@@ -168,7 +168,18 @@ router.get("/spots", async (req, res) => {
       "price",
       "createdAt",
       "updatedAt",
+      [
+        Sequelize.fn(
+          "ROUND",
+          Sequelize.fn("AVG", Sequelize.col("Reviews.stars")),
+          2
+        ),
+        "avgRating",
+      ],
+      // [Sequelize.fn("AVG", Sequelize.col("Reviews.stars")), "avgRating"],
+      [Sequelize.col("SpotImages.url"), "previewImage"],
     ],
+
     include: [
       {
         model: SpotImage,
