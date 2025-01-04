@@ -5,15 +5,55 @@ const router = express.Router();
 
 // GET all spots
 router.get("/", async (req, res) => {
-  try {
-    const spots = await Spot.findAll();
-    return res.json({ spots });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ message: "An error occurred while fetching spots." });
-  }
+  const user = req.user;
+  // console.log(user.id);
+  const allSpots = await Spot.findAll({
+    attributes: [
+      "id",
+      "ownerId",
+      "address",
+      "city",
+      "state",
+      "country",
+      "lat",
+      "lng",
+      "name",
+      "description",
+      "price",
+      "createdAt",
+      "updatedAt",
+      [
+        Sequelize.fn(
+          "ROUND",
+          Sequelize.fn("AVG", Sequelize.col("Reviews.stars")),
+          2
+        ),
+        "avgRating",
+      ],
+      // [Sequelize.fn("AVG", Sequelize.col("Reviews.stars")), "avgRating"],
+      [Sequelize.col("SpotImages.url"), "previewImage"],
+    ],
+
+    include: [
+      {
+        model: SpotImage,
+        as: "SpotImages",
+        where: {
+          preview: true,
+        },
+        required: false,
+        attributes: [],
+      },
+      {
+        model: Review,
+        required: false,
+        attributes: [],
+      },
+    ],
+    group: [["Spot.id"], ["SpotImages.url"]],
+    order: [["id", "ASC"]],
+  });
+  res.json({ Spots: allSpots });
 });
 
 // GET all bookings for a spot
