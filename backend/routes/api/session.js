@@ -4,7 +4,7 @@ const { Op } = require("sequelize");
 const bcrypt = require("bcryptjs");
 
 const { setTokenCookie, restoreUser } = require("../../utils/auth");
-const { User, Spot, Review, Booking } = require("../../db/models");
+const { User, Spot, Review, Booking, Sequelize } = require("../../db/models");
 
 const router = express.Router();
 
@@ -140,6 +140,48 @@ router.get("/reviews", async (req, res) => {
   }
 
   res.json({ Reviews: reviewsArr });
+});
+
+router.get("/spots", async (req, res) => {
+  const user = req.user;
+  console.log(user.id);
+  const allSpots = await Spot.findAll({
+    where: [{ ownerId: user.id }],
+    attributes: [
+      "id",
+      "ownerId",
+      "address",
+      "city",
+      "state",
+      "country",
+      "lat",
+      "lng",
+      "name",
+      "description",
+      "price",
+      "createdAt",
+      "updatedAt",
+    ],
+    include: [
+      {
+        model: SpotImage,
+        as: "SpotImages",
+        where: {
+          preview: true,
+        },
+        required: false,
+        attributes: [],
+      },
+      {
+        model: Review,
+        required: false,
+        attributes: [],
+      },
+    ],
+    group: [["Spot.id"], ["SpotImages.url"]],
+    order: [["id", "ASC"]],
+  });
+  res.json({ Spots: allSpots });
 });
 
 module.exports = router;
