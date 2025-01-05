@@ -178,7 +178,7 @@ router.get("/spots", requireAuth, async (req, res) => {
   res.json({ Spots: allSpots });
 });
 
-//Reviews by user
+// Reviews by user
 router.get("/", requireAuth, async (req, res) => {
   const user = req.user;
 
@@ -204,30 +204,27 @@ router.get("/", requireAuth, async (req, res) => {
     ],
   });
 
-  let reviewsArr = [];
+  const reviewsArr = [];
+  for (let review of reviews) {
+    let reviewObj = review.toJSON();
 
-  for (let i = 0; i < reviews.length; i++) {
-    let review = reviews[i];
-    let revObj = review.toJSON();
-    let spot = revObj.Spot;
-
-    let spotImage = await SpotImage.findOne({
+    const spot = reviewObj.Spot;
+    const previewImage = await SpotImage.findOne({
       where: {
         spotId: spot.id,
         preview: true,
       },
     });
 
-    if (spotImage) {
-      spot.previewImage = spotImage.url;
-    } else {
-      spot.previewImage = null;
-    }
+    spot.previewImage = previewImage ? previewImage.url : null;
 
-    reviewsArr.push(revObj);
+    reviewsArr.push(reviewObj);
   }
 
+  // Respond with the formatted reviews
   res.json({ Reviews: reviewsArr });
 });
+
+module.exports = router;
 
 module.exports = router;
