@@ -328,4 +328,43 @@ router.post("/:spotId/images", requireAuth, async (req, res) => {
   res.json({ id: newImage.id, url, preview });
 });
 
+// Add image to a spot based on spot id
+router.post("/spotId/images", requireAuth, async (req, res) => {
+  const { spotId } = req.params;
+  const { url, preview } = req.body;
+
+  const spot = await Spot.findOne({
+    where: {
+      id: spotId,
+    },
+  });
+
+  if (spot === null) {
+    res.status(404).json({
+      message: "Spot couldn't be found",
+    });
+  }
+
+  const previewExist = await SpotImage.findOne({
+    where: {
+      spotId: spot.id,
+      preview: true,
+    },
+  });
+
+  if (preview === true && previewExist) {
+    return res
+      .status(403)
+      .json({ message: "This spot already has a preview image" });
+  }
+
+  const newImage = await SpotImage.create({
+    spotId: spotId,
+    url,
+    preview,
+  });
+
+  res.json({ id: newImage.id, url, preview });
+});
+
 module.exports = router;
