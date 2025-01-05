@@ -435,7 +435,7 @@ router.put("/:spotId", requireAuth, async (req, res) => {
     });
   }
 
-  if (spot.ownerId !== userId) {
+  if (spot.ownerId !== user) {
     return res.status(403).json({
       message: "Forbidden: You do not have permission to edit this spot",
     });
