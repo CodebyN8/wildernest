@@ -11,6 +11,7 @@ const {
   Review,
   Booking,
   SpotImage,
+  ReviewImage,
   Sequelize,
 } = require("../../db/models");
 
@@ -178,7 +179,7 @@ router.get("/spots", requireAuth, async (req, res) => {
   res.json({ Spots: allSpots });
 });
 
-// Reviews by user
+//Reviews by user
 router.get("/", requireAuth, async (req, res) => {
   const user = req.user;
 
@@ -204,27 +205,30 @@ router.get("/", requireAuth, async (req, res) => {
     ],
   });
 
-  const reviewsArr = [];
-  for (let review of reviews) {
-    let reviewObj = review.toJSON();
+  let reviewsArr = [];
 
-    const spot = reviewObj.Spot;
-    const previewImage = await SpotImage.findOne({
+  for (let i = 0; i < reviews.length; i++) {
+    let review = reviews[i];
+    let revObj = review.toJSON();
+    let spot = revObj.Spot;
+
+    let spotImage = await SpotImage.findOne({
       where: {
         spotId: spot.id,
         preview: true,
       },
     });
 
-    spot.previewImage = previewImage ? previewImage.url : null;
+    if (spotImage) {
+      spot.previewImage = spotImage.url;
+    } else {
+      spot.previewImage = null;
+    }
 
-    reviewsArr.push(reviewObj);
+    reviewsArr.push(revObj);
   }
 
-  // Respond with the formatted reviews
   res.json({ Reviews: reviewsArr });
 });
-
-module.exports = router;
 
 module.exports = router;
