@@ -367,4 +367,89 @@ router.post("/spotId/images", requireAuth, async (req, res) => {
   res.json({ id: newImage.id, url, preview });
 });
 
+//edit a spot
+router.put("/:spotId", requireAuth, async (req, res) => {
+  const { spotId } = req.params;
+  const user = req.user.id;
+
+  const { address, city, state, country, lat, lng, name, description, price } =
+    req.body;
+
+  const spotFields = [
+    "ownerId",
+    "address",
+    "city",
+    "state",
+    "country",
+    "lat",
+    "lng",
+    "name",
+    "description",
+    "price",
+  ];
+
+  const errors = {};
+
+  if (!address) {
+    errors.address = "Street address is required";
+  }
+  if (!city) {
+    errors.city = "City is required";
+  }
+  if (!state) {
+    errors.state = "State is required";
+  }
+  if (!country) {
+    errors.country = "Country is required";
+  }
+  if (!lat || isNaN(lat) || lat < -90 || lat > 90) {
+    errors.lat = "Latitude is not valid";
+  }
+  if (!lng || isNaN(lng) || lng < -180 || lng > 180) {
+    errors.lng = "Longitude is not valid";
+  }
+  if (!name || name.length > 50) {
+    errors.name = "Name must be less than 50 characters";
+  }
+  if (!description) {
+    errors.description = "Description is required";
+  }
+  if (!price || isNaN(price) || price < 0) {
+    errors.price = "Price per day is required";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return res.status(400).json({
+      message: "Bad Request",
+      errors,
+    });
+  }
+
+  const spot = await Spot.findOne({
+    where: { id: spotId },
+  });
+
+  if (!spot) {
+    res.status(404).json({
+      message: "Spot couldn't be found",
+    });
+  }
+
+  if (spot.ownerId !== userId) {
+    return res.status(403).json({
+      message: "Forbidden: You do not have permission to edit this spot",
+    });
+  }
+
+  spotFields.forEach((field) => {
+    if (req.body[field]) {
+      spot[field] = req.body[field];
+    }
+  });
+
+  spot.save();
+
+  res.json(spot);
+});
+
 module.exports = router;
