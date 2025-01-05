@@ -471,4 +471,40 @@ router.delete("/:spotId", requireAuth, async (req, res) => {
   res.json({ message: "Successfully deleted" });
 });
 
+router.get("/:spotId/reviews", async (req, res) => {
+  const { spotId } = req.params;
+  const spot = await Spot.findOne({
+    where: {
+      id: spotId,
+    },
+  });
+
+  if (spot === null) {
+    res.status(404).json({
+      message: "Spot couldn't be found",
+    });
+  }
+
+  // get all reviews for a spot
+  const reviews = await Review.findAll({
+    where: {
+      spotId: spot.id,
+    },
+
+    include: [
+      {
+        model: User,
+        attributes: ["id", "firstName", "lastName"],
+      },
+      {
+        model: ReviewImage,
+        attributes: ["id", "url"],
+        required: false,
+      },
+    ],
+  });
+
+  res.json({ Reviews: reviews });
+});
+
 module.exports = router;
