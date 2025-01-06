@@ -4,6 +4,7 @@ const {
   Spot,
   Booking,
   Review,
+  ReviewImage,
   SpotImage,
   Sequelize,
 } = require("../../db/models");
