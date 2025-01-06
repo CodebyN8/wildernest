@@ -563,4 +563,70 @@ router.post("/:spotId/reviews", requireAuth, async (req, res) => {
   res.json(postReview);
 });
 
+//bookings by spot id
+router.get("/:spotId/bookings", requireAuth, async (req, res) => {
+  const { spotId } = req.params;
+  const { user } = req;
+
+  const spot = await Spot.findOne({
+    where: {
+      id: spotId,
+    },
+  });
+
+  if (spot === null) {
+    res.status(404).json({
+      message: "Spot couldn't be found",
+    });
+  }
+
+  if (spot.ownerId === user.id) {
+    const userBookings = await Booking.findAll({
+      where: {
+        spotId: spotId,
+      },
+      include: [
+        {
+          model: User,
+          attributes: ["id", "firstName", "lastName"],
+        },
+      ],
+    });
+
+    let bookingResults = [];
+    for (let i = 0; i < userBookings.length; i++) {
+      let booking = userBookings[i];
+      let bookingObj = booking.toJSON();
+      let userObj = bookingObj.User;
+
+      bookingResults.push({
+        User: {
+          UserId: userObj.id,
+          FirstName: userObj.firstName,
+          LastName: userObj.lastName,
+        },
+        id: bookingObj.id,
+        spotId: bookingObj.spotId,
+        userId: bookingObj.userId,
+        StartDate: bookingObj.startDate,
+        EndDate: bookingObj.endDate,
+        CreatedAt: bookingObj.createdAt,
+        UpdatedAt: bookingObj.updatedAt,
+      });
+    }
+
+    return res.json({ Bookings: bookingResults });
+  } else {
+    const notUserBookings = await Booking.findAll({
+      where: {
+        spotId: spotId,
+      },
+      attributes: {
+        exclude: ["id", "userId", "createdAt", "updatedAt"],
+      },
+    });
+    res.json({ Bookings: notUserBookings });
+  }
+});
+
 module.exports = router;
