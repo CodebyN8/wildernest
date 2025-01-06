@@ -16,10 +16,9 @@ const spot = require("../../db/models/spot");
 const router = express.Router();
 
 //Delete a review image
-router.delete("/:reviewId/images/:imageId", requireAuth, async (req, res) => {
+router.delete("/:imageId", requireAuth, async (req, res) => {
   const { imageId } = req.params;
   const user = req.user.id;
-  const { reviewId } = req.params;
   const image = await ReviewImage.findOne({
     where: {
       id: imageId,
