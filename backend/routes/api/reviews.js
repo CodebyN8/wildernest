@@ -140,37 +140,4 @@ router.delete("/:reviewId", requireAuth, async (req, res) => {
   res.json({ message: "Review has been deleted" });
 });
 
-//Delete a review image
-router.delete("/:reviewId/images/:imageId", requireAuth, async (req, res) => {
-  const { imageId } = req.params;
-  const user = req.user.id;
-  const { reviewId } = req.params;
-  const image = await ReviewImage.findOne({
-    where: {
-      id: imageId,
-    },
-  });
-
-  if (image === null) {
-    return res.status(404).json({
-      message: "Review Image couldn't be found",
-    });
-  }
-
-  const review = await Review.findOne({
-    where: {
-      id: image.reviewId,
-    },
-  });
-
-  if (user !== review.userId) {
-    return res.status(401).json({
-      message: "Review Image does not belong to user",
-    });
-  }
-
-  image.destroy();
-  res.json({ message: "Successfully deleted" });
-});
-
 module.exports = router;
