@@ -629,4 +629,106 @@ router.get("/:spotId/bookings", requireAuth, async (req, res) => {
   }
 });
 
+//create a booking
+router.post("/:spotId/bookings", requireAuth, async (req, res) => {
+  const { spotId } = req.params;
+  const { startDate, endDate } = req.body;
+  const user = req.user;
+
+  const errors = {};
+
+  const spot = await Spot.findOne({
+    where: {
+      id: spotId,
+    },
+  });
+
+  if (spot === null) {
+    return res.status(404).json({
+      message: "Spot couldn't be found",
+    });
+  }
+
+  let currentDate = new Date();
+
+  if (startDate > endDate) {
+    return res
+      .status(400)
+      .json({ message: "endDate cannot be on or before startDate" });
+  }
+
+  const conflictingBookings = await Booking.findAll({
+    where: {
+      spotId: spot.id,
+      [Op.or]: [
+        {
+          startDate: {
+            [Op.lte]: startDate,
+          },
+          endDate: {
+            [Op.between]: [startDate, endDate],
+          },
+        },
+        {
+          startDate: {
+            [Op.between]: [startDate, endDate],
+          },
+          endDate: {
+            [Op.gte]: endDate,
+          },
+        },
+        {
+          startDate: {
+            [Op.between]: [startDate, endDate],
+          },
+          endDate: {
+            [Op.between]: [startDate, endDate],
+          },
+        },
+        {
+          startDate: {
+            [Op.lte]: startDate,
+          },
+          endDate: {
+            [Op.gte]: endDate,
+          },
+        },
+      ],
+    },
+  });
+
+  if (conflictingBookings.length > 0) {
+    errors.startDate = "Start date conflicts with an existing booking";
+    errors.endDate = "End date conflicts with an existing booking";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return res.status(403).json({
+      message: "Sorry, this spot is already booked for the specified dates",
+      errors,
+    });
+  }
+
+  if (new Date(startDate) < currentDate || new Date(endDate) < currentDate) {
+    return res.json({
+      message: "you cannot set a booking in the past",
+    });
+  }
+
+  if (user.id === spot.ownerId) {
+    return res.json({
+      message: "Spot cannot be booked by owner",
+    });
+  }
+
+  const postBooking = await Booking.create({
+    spotId: spot.id,
+    userId: req.user.id,
+    startDate,
+    endDate,
+  });
+
+  res.json(postBooking);
+});
+
 module.exports = router;
