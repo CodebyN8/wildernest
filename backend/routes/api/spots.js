@@ -8,6 +8,7 @@ const {
   Sequelize,
 } = require("../../db/models");
 const { requireAuth } = require("../../utils/auth");
+const { Op } = require("sequelize");
 // const { route } = require("./session");
 
 const router = express.Router();
