@@ -1,6 +1,13 @@
+const express = require("express");
+const { ReviewImage, Review } = require("../../db/models");
+const { requireAuth } = require("../../utils/auth");
+
+const router = express.Router();
+
+// Delete a review image
 router.delete("/:imageId", requireAuth, async (req, res) => {
   const { imageId } = req.params;
-  const userId = req.user.id; // Authenticated user's ID
+  const userId = req.user.id;
 
   try {
     const image = await ReviewImage.findOne({
