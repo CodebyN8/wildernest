@@ -66,11 +66,100 @@ router.get("/current", requireAuth, async (req, res) => {
   res.json({ Spots: allSpots });
 });
 
-// GET all spots
+// Get all spots
 router.get("/", async (req, res) => {
-  const user = req.user;
+  const page = parseInt(req.query.page) || 1;
+  const size = parseInt(req.query.size) || 20;
+  const offset = size * (page - 1);
+  const limit = size;
+  const minLat = req.query.minLat;
+  const maxLat = req.query.maxLat;
+  const minLng = req.query.minLng;
+  const maxLng = req.query.maxLng;
+  const minPrice = req.query.minPrice;
+  const maxPrice = req.query.maxPrice;
 
+  const filter = {};
+  const errors = {};
+
+  if (page) {
+    if (page < 1) {
+      errors.page = "Page must be greater than or equal to 1";
+    }
+  }
+
+  if (size) {
+    if (size < 1) {
+      errors.size = "Size must be greater than or equal to 1";
+    }
+  }
+
+  if (minLat) {
+    if (minLat < -90) {
+      errors.minLat = "Minimum latitude is invalid";
+    } else {
+      filter.lat = { [Op.gte]: minLat };
+    }
+  }
+
+  if (maxLat) {
+    if (maxLat > 90) {
+      errors.maxLat = "Maximum latitude is invalid";
+    } else if (filter.lat) {
+      filter.lat = { [Op.between]: [minLat, maxLat] };
+    } else {
+      filter.lat = { [Op.lte]: maxLat };
+    }
+  }
+
+  if (minLng) {
+    if (minLng < -180) {
+      errors.minLng = "Minimum longitude is invalid";
+    } else {
+      filter.lng = { [Op.gte]: minLng };
+    }
+  }
+
+  if (maxLng) {
+    if (maxLng > 180) {
+      errors.maxLng = "Maximum longitude is invalid";
+    } else if (filter.lng) {
+      filter.lng = { [Op.between]: [minLng, maxLng] };
+    } else {
+      filter.lng = { [Op.lte]: maxLng };
+    }
+  }
+
+  if (minPrice) {
+    if (minPrice < 0) {
+      errors.minPrice = "Minimum price must be greater than or equal to 0";
+    } else {
+      filter.price = { [Op.gte]: minPrice };
+    }
+  }
+
+  if (maxPrice) {
+    if (minPrice < 0) {
+      errors.maxPrice = "Maximum price must be greater than or equal to 0";
+    } else if (filter.price) {
+      filter.price = { [Op.between]: [minPrice, maxPrice] };
+    } else {
+      filter.price = { [Op.lte]: maxPrice };
+    }
+  }
+
+  console.log(offset);
+  console.log(limit);
+
+  if (Object.keys(errors).length > 0) {
+    return res.status(400).json({
+      message: "Bad Request",
+      errors,
+    });
+  }
   const allSpots = await Spot.findAll({
+    where: filter,
+
     attributes: [
       "id",
       "ownerId",
@@ -96,7 +185,6 @@ router.get("/", async (req, res) => {
 
       [Sequelize.col("SpotImages.url"), "previewImage"],
     ],
-
     include: [
       {
         model: SpotImage,
@@ -113,10 +201,17 @@ router.get("/", async (req, res) => {
         attributes: [],
       },
     ],
+
     group: [["Spot.id"], ["SpotImages.url"]],
     order: [["id", "ASC"]],
   });
-  res.json({ Spots: allSpots });
+
+  const spotResults = [];
+
+  for (let i = offset; i < allSpots.length && i < offset + limit; i++) {
+    spotResults.push(allSpots[i]);
+  }
+  res.json({ Spots: spotResults, page, size });
 });
 
 // GET all bookings for a spot
