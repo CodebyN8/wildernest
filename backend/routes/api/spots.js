@@ -12,6 +12,60 @@ const { Op } = require("sequelize");
 
 const router = express.Router();
 
+//Get all spots by current user
+router.get("/current", requireAuth, async (req, res) => {
+  const user = req.user;
+
+  const allSpots = await Spot.findAll({
+    where: [{ ownerId: user.id }],
+    attributes: [
+      "id",
+      "ownerId",
+      "address",
+      "city",
+      "state",
+      "country",
+      "lat",
+      "lng",
+      "name",
+      "description",
+      "price",
+      "createdAt",
+      "updatedAt",
+      [
+        Sequelize.fn(
+          "ROUND",
+          Sequelize.fn("AVG", Sequelize.col("Reviews.stars")),
+          2
+        ),
+        "avgRating",
+      ],
+
+      [Sequelize.col("SpotImages.url"), "previewImage"],
+    ],
+
+    include: [
+      {
+        model: SpotImage,
+        as: "SpotImages",
+        where: {
+          preview: true,
+        },
+        required: false,
+        attributes: [],
+      },
+      {
+        model: Review,
+        required: false,
+        attributes: [],
+      },
+    ],
+    group: [["Spot.id"], ["SpotImages.url"]],
+    order: [["id", "ASC"]],
+  });
+  res.json({ Spots: allSpots });
+});
+
 // GET all spots
 router.get("/", async (req, res) => {
   const user = req.user;
