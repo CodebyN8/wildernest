@@ -26,7 +26,7 @@ router.use("/bookings", bookingsRouter);
 
 router.use("/spot-images", spotImagesRouter);
 
-router.use("/reviews-images", reviewsImagesRouter);
+router.use("/review-images", reviewsImagesRouter);
 
 // Keep this route to test frontend setup in Mod 5
 router.post("/test", function (req, res) {
