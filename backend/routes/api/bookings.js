@@ -162,4 +162,49 @@ router.delete("/:bookingId", requireAuth, async (req, res) => {
   res.json({ message: "Successfully deleted" });
 });
 
+//get all bookings by user
+router.get("/current", requireAuth, async (req, res) => {
+  const { user } = req;
+  console.log(user.id);
+
+  const bookings = await Booking.findAll({
+    where: {
+      userId: user.id,
+    },
+
+    include: [
+      {
+        model: Spot,
+        attributes: {
+          exclude: ["description", "createdAt", "updatedAt"],
+        },
+      },
+    ],
+  });
+
+  const bookingResults = [];
+
+  for (let i = 0; i < bookings.length; i++) {
+    let booking = bookings[i];
+    let bookingObj = booking.toJSON();
+    let spot = bookingObj.Spot;
+
+    let previewImage = await SpotImage.findOne({
+      where: {
+        preview: true,
+        spotId: spot.id,
+      },
+    });
+
+    if (previewImage) {
+      spot.previewImage = previewImage.url;
+    } else {
+      spot.previewImage = null;
+    }
+
+    bookingResults.push(bookingObj);
+  }
+  res.json({ Bookings: bookingResults });
+});
+
 module.exports = router;
